@@ -101,7 +101,7 @@
         <!-- Skip Days Button below -->
         <button id="skipDaysButton" class="button">Skip Days</button>
         <button id="clearAllButton" class="button">Clear</button>
-        <br>
+        <br /><br />
 
         <div id="stopwatchList"></div>
     </div>
@@ -190,8 +190,8 @@
             const stopwatch = document.createElement("div");
             stopwatch.className = "stopwatch";
             stopwatch.innerHTML = `
-                <span class="day">${dayOfWeek}</span> | <span class="hours">00</span>:<span class="minutes">00</span>:<span class="seconds">00</span>
-            `;
+                        <span class="day">${dayOfWeek}</span> | <span class="hours">00</span>:<span class="minutes">00</span>:<span class="seconds">00</span>
+                    `;
 
             const buttons = document.createElement("div");
             buttons.className = "buttons";
