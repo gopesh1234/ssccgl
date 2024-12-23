@@ -89,7 +89,8 @@
 
     <script>
         let totalSeconds = 0;
-        let remainingDays = parseInt(localStorage.getItem("remainingDays")) || 181;
+        let remainingDays = parseInt(localStorage.getItem("remainingDays")) || 1; // Start from 1
+        const totalMaxDays = 180; // Total maximum days
 
         const totalHoursElement = document.getElementById("totalHours");
         const remainingDaysElement = document.getElementById("remainingDays");
@@ -104,7 +105,7 @@
 
         // Restore stopwatches
         savedData.stopwatches.forEach(({ date, elapsedSeconds, isRunning }) => {
-            createStopwatch(date, elapsedSeconds, isRunning);
+            createStopwatch(date, elapsedSeconds, isRunning, false); // Pass false to not update total hours initially
         });
 
         updateTotalHours();
@@ -121,7 +122,7 @@
         }
 
         function updateRemainingDays() {
-            remainingDaysElement.textContent = `Remaining Days: ${remainingDays}`;
+            remainingDaysElement.textContent = `Remaining Days: ${remainingDays}/${totalMaxDays}`;
             localStorage.setItem("remainingDays", remainingDays);
         }
 
@@ -140,7 +141,7 @@
             localStorage.setItem("stopwatchData", JSON.stringify(data));
         }
 
-        function createStopwatch(date, initialSeconds = 0, isRunning = false) {
+        function createStopwatch(date, initialSeconds = 0, isRunning = false, updateTotal = true) {
             if (document.querySelector(`.stopwatch-container[data-date="${date}"]`)) {
                 alert("Stopwatch for this date already exists!");
                 return;
@@ -152,14 +153,16 @@
             container.dataset.elapsedSeconds = initialSeconds;
             container.dataset.isRunning = isRunning;
 
+            const dayOfWeek = new Date(date).toLocaleString('en-US', { weekday: 'long' });
+
             const dateLabel = document.createElement("div");
             dateLabel.className = "date-label";
-            dateLabel.textContent = `Date: ${date}`;
+            dateLabel.textContent = `Date: ${date} (${dayOfWeek})`;
 
             const stopwatch = document.createElement("div");
             stopwatch.className = "stopwatch";
             stopwatch.innerHTML = `
-                <span class="hours">00</span>:<span class="minutes">00</span>:<span class="seconds">00</span>
+                <span class="day">${dayOfWeek}</span> | <span class="hours">00</span>:<span class="minutes">00</span>:<span class="seconds">00</span>
             `;
 
             const buttons = document.createElement("div");
@@ -196,7 +199,6 @@
                     totalSeconds++;
                     container.dataset.elapsedSeconds = elapsedSeconds;
                     updateDisplay();
-                    updateTotalHours();
                 }, 1000);
                 container.dataset.isRunning = "true";
             }
@@ -224,51 +226,34 @@
             const today = new Date();
             const date = today.toISOString().split("T")[0];
 
-            // Check if a stopwatch for this date already exists
             if (document.querySelector(`.stopwatch-container[data-date="${date}"]`)) {
                 alert("Stopwatch for this date already exists!");
                 return;
             }
 
-            if (remainingDays > 0) {
-                // Successfully create a new stopwatch
-                createStopwatch(date);
-                remainingDays--; // Decrease remaining days
-                updateRemainingDays();
-
-                // Update total hours by summing all stopwatches
-                updateTotalHours();
-                saveData();
-            } else {
-                alert("No remaining days left!");
-            }
+            // Create stopwatch and update total hours only when new stopwatch is added
+            createStopwatch(date);
+            remainingDays++; // Increase remaining days
+            updateRemainingDays();
+            updateTotalHours();
+            saveData();
         });
 
         clearAllButton.addEventListener("click", () => {
-            // Open a popup to confirm the action
             const userInput = prompt("To clear all data, please type 'clear':");
 
-            // Check if the user entered the correct value
             if (userInput && userInput.toLowerCase() === "clear") {
-                // Clear all saved data in localStorage
                 localStorage.removeItem("stopwatchData");
                 localStorage.removeItem("remainingDays");
 
-                // Reset stopwatch list in the DOM
                 stopwatchList.innerHTML = "";
-
-                // Reset variables
                 totalSeconds = 0;
-                remainingDays = 181;
+                remainingDays = 1; // Start from 1 again
 
-                // Update the UI
                 updateTotalHours();
                 updateRemainingDays();
-
-                // Confirm the action
                 alert("All data has been cleared!");
             } else {
-                // If the input is incorrect or canceled
                 alert("Data clear action canceled.");
             }
         });
