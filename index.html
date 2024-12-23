@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch with Remaining Days</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: #fff;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        #remainingDays {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        #totalHours {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .stopwatch-container {
+            margin-bottom: 20px;
+            border: 1px solid #fff;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .date-label {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .stopwatch {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .button {
+            background: #fff;
+            color: #333;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+
+            .button:hover {
+                background: #ddd;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SSC CGL 2025</h1>
+        <div id="remainingDays">Remaining Days: 181</div>
+        <div id="totalHours">Total Hours: 0</div>
+        <button id="addStopwatchButton" class="button">Add New Stopwatch</button>
+        <button id="clearAllButton" class="button">Clear</button>
+        <div id="stopwatchList"></div>
+    </div>
+
+    <script>
+        let totalSeconds = 0;
+        let remainingDays = parseInt(localStorage.getItem("remainingDays")) || 181;
+
+        const totalHoursElement = document.getElementById("totalHours");
+        const remainingDaysElement = document.getElementById("remainingDays");
+        const stopwatchList = document.getElementById("stopwatchList");
+        const addStopwatchButton = document.getElementById("addStopwatchButton");
+        const clearAllButton = document.getElementById("clearAllButton");
+
+        // Load state from localStorage
+        const savedData = JSON.parse(localStorage.getItem("stopwatchData")) || { totalSeconds: 0, stopwatches: [] };
+        savedData.stopwatches = Array.isArray(savedData.stopwatches) ? savedData.stopwatches : [];
+        totalSeconds = savedData.totalSeconds || 0;
+
+        // Restore stopwatches
+        savedData.stopwatches.forEach(({ date, elapsedSeconds, isRunning }) => {
+            createStopwatch(date, elapsedSeconds, isRunning);
+        });
+
+        updateTotalHours();
+        updateRemainingDays();
+
+        function updateTotalHours() {
+            totalSeconds = Array.from(stopwatchList.children).reduce((sum, container) => {
+                return sum + parseInt(container.dataset.elapsedSeconds || "0");
+            }, 0);
+
+            const totalHours = (totalSeconds / 3600).toFixed(2);
+            totalHoursElement.textContent = `Total Hours: ${totalHours}`;
+            saveData();
+        }
+
+        function updateRemainingDays() {
+            remainingDaysElement.textContent = `Remaining Days: ${remainingDays}`;
+            localStorage.setItem("remainingDays", remainingDays);
+        }
+
+        function saveData() {
+            const stopwatches = Array.from(stopwatchList.children).map(container => ({
+                date: container.dataset.date,
+                elapsedSeconds: parseInt(container.dataset.elapsedSeconds || "0"),
+                isRunning: container.dataset.isRunning === "true"
+            }));
+
+            const data = {
+                totalSeconds,
+                stopwatches
+            };
+
+            localStorage.setItem("stopwatchData", JSON.stringify(data));
+        }
+
+        function createStopwatch(date, initialSeconds = 0, isRunning = false) {
+            if (document.querySelector(`.stopwatch-container[data-date="${date}"]`)) {
+                alert("Stopwatch for this date already exists!");
+                return;
+            }
+
+            const container = document.createElement("div");
+            container.className = "stopwatch-container";
+            container.dataset.date = date;
+            container.dataset.elapsedSeconds = initialSeconds;
+            container.dataset.isRunning = isRunning;
+
+            const dateLabel = document.createElement("div");
+            dateLabel.className = "date-label";
+            dateLabel.textContent = `Date: ${date}`;
+
+            const stopwatch = document.createElement("div");
+            stopwatch.className = "stopwatch";
+            stopwatch.innerHTML = `
+                <span class="hours">00</span>:<span class="minutes">00</span>:<span class="seconds">00</span>
+            `;
+
+            const buttons = document.createElement("div");
+            buttons.className = "buttons";
+
+            const startStopButton = document.createElement("button");
+            startStopButton.className = "button";
+            startStopButton.textContent = isRunning ? "Stop" : "Start";
+
+            buttons.appendChild(startStopButton);
+
+            container.appendChild(dateLabel);
+            container.appendChild(stopwatch);
+            container.appendChild(buttons);
+
+            stopwatchList.appendChild(container);
+
+            let timer = null;
+            let elapsedSeconds = initialSeconds;
+
+            function updateDisplay() {
+                const hours = Math.floor(elapsedSeconds / 3600);
+                const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+                const seconds = elapsedSeconds % 60;
+
+                stopwatch.querySelector(".hours").textContent = hours.toString().padStart(2, "0");
+                stopwatch.querySelector(".minutes").textContent = minutes.toString().padStart(2, "0");
+                stopwatch.querySelector(".seconds").textContent = seconds.toString().padStart(2, "0");
+            }
+
+            function startTimer() {
+                timer = setInterval(() => {
+                    elapsedSeconds++;
+                    totalSeconds++;
+                    container.dataset.elapsedSeconds = elapsedSeconds;
+                    updateDisplay();
+                    updateTotalHours();
+                }, 1000);
+                container.dataset.isRunning = "true";
+            }
+
+            startStopButton.addEventListener("click", () => {
+                if (container.dataset.isRunning === "true") {
+                    clearInterval(timer);
+                    container.dataset.isRunning = "false";
+                    startStopButton.textContent = "Start";
+                } else {
+                    startTimer();
+                    startStopButton.textContent = "Stop";
+                }
+                saveData();
+            });
+
+            if (isRunning) {
+                startTimer();
+            }
+
+            updateDisplay();
+        }
+
+        addStopwatchButton.addEventListener("click", () => {
+            const today = new Date();
+            const date = today.toISOString().split("T")[0];
+
+            // Check if a stopwatch for this date already exists
+            if (document.querySelector(`.stopwatch-container[data-date="${date}"]`)) {
+                alert("Stopwatch for this date already exists!");
+                return;
+            }
+
+            if (remainingDays > 0) {
+                // Successfully create a new stopwatch
+                createStopwatch(date);
+                remainingDays--; // Decrease remaining days
+                updateRemainingDays();
+
+                // Update total hours by summing all stopwatches
+                updateTotalHours();
+                saveData();
+            } else {
+                alert("No remaining days left!");
+            }
+        });
+
+        clearAllButton.addEventListener("click", () => {
+            // Open a popup to confirm the action
+            const userInput = prompt("To clear all data, please type 'clear':");
+
+            // Check if the user entered the correct value
+            if (userInput && userInput.toLowerCase() === "clear") {
+                // Clear all saved data in localStorage
+                localStorage.removeItem("stopwatchData");
+                localStorage.removeItem("remainingDays");
+
+                // Reset stopwatch list in the DOM
+                stopwatchList.innerHTML = "";
+
+                // Reset variables
+                totalSeconds = 0;
+                remainingDays = 181;
+
+                // Update the UI
+                updateTotalHours();
+                updateRemainingDays();
+
+                // Confirm the action
+                alert("All data has been cleared!");
+            } else {
+                // If the input is incorrect or canceled
+                alert("Data clear action canceled.");
+            }
+        });
+
+    </script>
+</body>
+</html>
