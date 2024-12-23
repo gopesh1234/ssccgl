@@ -75,28 +75,49 @@
             .button:hover {
                 background: #ddd;
             }
+
+        /* Skip Days section styling */
+        #skipDays {
+            font-weight: bold;
+        }
+
+        /* Layout improvements */
+        #skipDaysButton {
+            margin-top: 15px;
+        }
+
     </style>
 </head>
 <body>
     <div class="container">
         <h1>SSC CGL 2025</h1>
-        <div id="remainingDays">Remaining Days: 181</div>
-        <div id="totalHours">Total Hours: 0</div>
+        <div id="remainingDays"></div>
+        <!-- Place this section below the total hours element -->
+        <div id="totalHours">Total Hours: 0.00</div>
+        <div id="skipDays">Skip Days: 0</div>
+
+        <!-- Clear All Data Button -->
         <button id="addStopwatchButton" class="button">Add New Stopwatch</button>
+        <!-- Skip Days Button below -->
+        <button id="skipDaysButton" class="button">Skip Days</button>
         <button id="clearAllButton" class="button">Clear</button>
+
         <div id="stopwatchList"></div>
     </div>
 
     <script>
         let totalSeconds = 0;
-        let remainingDays = parseInt(localStorage.getItem("remainingDays")) || 1; // Start from 1
+        let remainingDays = parseInt(localStorage.getItem("remainingDays")) || 0; // Start from 0
         const totalMaxDays = 180; // Total maximum days
+        let skipDays = parseInt(localStorage.getItem("skipDays")) || 0; // Start Skip Days from 0
 
         const totalHoursElement = document.getElementById("totalHours");
         const remainingDaysElement = document.getElementById("remainingDays");
+        const skipDaysElement = document.getElementById("skipDays");
         const stopwatchList = document.getElementById("stopwatchList");
         const addStopwatchButton = document.getElementById("addStopwatchButton");
         const clearAllButton = document.getElementById("clearAllButton");
+        const skipDaysButton = document.getElementById("skipDaysButton");
 
         // Load state from localStorage
         const savedData = JSON.parse(localStorage.getItem("stopwatchData")) || { totalSeconds: 0, stopwatches: [] };
@@ -110,6 +131,7 @@
 
         updateTotalHours();
         updateRemainingDays();
+        updateSkipDays();
 
         function updateTotalHours() {
             totalSeconds = Array.from(stopwatchList.children).reduce((sum, container) => {
@@ -124,6 +146,11 @@
         function updateRemainingDays() {
             remainingDaysElement.textContent = `Remaining Days: ${remainingDays}/${totalMaxDays}`;
             localStorage.setItem("remainingDays", remainingDays);
+        }
+
+        function updateSkipDays() {
+            skipDaysElement.textContent = `Skip Days: ${skipDays}`;
+            localStorage.setItem("skipDays", skipDays);
         }
 
         function saveData() {
@@ -199,6 +226,9 @@
                     totalSeconds++;
                     container.dataset.elapsedSeconds = elapsedSeconds;
                     updateDisplay();
+                    if (updateTotal) {
+                        updateTotalHours(); // Only update total hours if a new stopwatch is added
+                    }
                 }, 1000);
                 container.dataset.isRunning = "true";
             }
@@ -235,7 +265,6 @@
             createStopwatch(date);
             remainingDays++; // Increase remaining days
             updateRemainingDays();
-            updateTotalHours();
             saveData();
         });
 
@@ -245,18 +274,28 @@
             if (userInput && userInput.toLowerCase() === "clear") {
                 localStorage.removeItem("stopwatchData");
                 localStorage.removeItem("remainingDays");
+                localStorage.removeItem("skipDays");
 
                 stopwatchList.innerHTML = "";
                 totalSeconds = 0;
-                remainingDays = 1; // Start from 1 again
+                remainingDays = 0; // Start from 0 again
+                skipDays = 0; // Reset skip days
 
                 updateTotalHours();
                 updateRemainingDays();
+                updateSkipDays();
                 alert("All data has been cleared!");
             } else {
                 alert("Data clear action canceled.");
             }
         });
+
+        skipDaysButton.addEventListener("click", () => {
+            skipDays++; // Increase skip days
+            updateSkipDays(); // Update UI
+            saveData(); // Save to localStorage
+        });
+
 
     </script>
 </body>
